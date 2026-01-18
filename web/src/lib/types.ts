@@ -9,8 +9,10 @@ export interface Market {
   question: string;
   description?: string;
   outcomes: Outcome[];
+  clob_token_ids: string[];  // Token IDs for each outcome (for price history)
   liquidity: number;
   volume?: number;
+  volume_24hr?: number;
   end_date?: string;
   active: boolean;
   slug?: string;

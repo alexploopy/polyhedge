@@ -369,6 +369,18 @@ Return JSON:
                         })
 
                     logger.info(f"Claude organized markets into {len(themes)} themes")
+
+                    # Log detailed theme assignments
+                    for i, theme in enumerate(themes, 1):
+                        logger.info(f"=== Theme {i}: {theme['name']} ===")
+                        logger.info(f"    Description: {theme['description'][:100]}...")
+                        logger.info(f"    Markets assigned: {len(theme['markets'])}")
+                        for j, entry in enumerate(theme['markets'], 1):
+                            market = entry['market']
+                            score = entry['correlation_score']
+                            question = market.question[:60] + "..." if len(market.question) > 60 else market.question
+                            logger.info(f"      [{j}] (corr={score:.2f}) {question}")
+
                     return themes
 
         except Exception as e:

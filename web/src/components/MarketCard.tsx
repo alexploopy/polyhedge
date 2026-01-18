@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { TrendingUp, DollarSign, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { HedgeBet } from '@/lib/types';
+import { PriceChart } from './PriceChart';
 
 interface Props {
   bet: HedgeBet;
@@ -205,14 +206,43 @@ export function MarketCard({ bet, className = '', onUpdateAllocation, totalBudge
             </div>
           )}
 
+          {/* Price History Chart */}
+          <div className="mb-6" onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              // Find the outcome index for the recommended outcome
+              const outcomeIdx = market.market.outcomes.findIndex(
+                (o) => o.name.toLowerCase() === outcome.toLowerCase()
+              );
+              return (
+                <PriceChart
+                  marketId={market.market.id}
+                  outcomeIndex={outcomeIdx >= 0 ? outcomeIdx : 0}
+                  outcomeName={outcome}
+                />
+              );
+            })()}
+          </div>
+
           {/* Additional Market Info */}
           <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
             <h5 className="text-sm font-semibold text-gray-800 mb-3">Market Details</h5>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-gray-500 block mb-1">Liquidity</span>
                 <span className="font-semibold text-gray-900">
                   ${(market.market.liquidity || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 block mb-1">Volume</span>
+                <span className="font-semibold text-gray-900">
+                  ${(market.market.volume || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 block mb-1">24h Volume</span>
+                <span className="font-semibold text-gray-900">
+                  ${(market.market.volume_24hr || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
               </div>
               <div>
@@ -228,7 +258,7 @@ export function MarketCard({ bet, className = '', onUpdateAllocation, totalBudge
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 block mb-1">Market Status</span>
+                <span className="text-gray-500 block mb-1">Status</span>
                 <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                   market.market.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
@@ -247,22 +277,6 @@ export function MarketCard({ bet, className = '', onUpdateAllocation, totalBudge
               </p>
             </div>
           )}
-
-          {/* Link to Polymarket */}
-          <div className="mt-4 text-center">
-            <a
-              href={`https://polymarket.com/event/${market.market.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              View on Polymarket
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-          </div>
         </div>
       </div>
 

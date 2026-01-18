@@ -126,3 +126,41 @@ export async function checkHealth(): Promise<{ status: string; version: string }
 
   return response.json();
 }
+
+/**
+ * Price history data point from Polymarket CLOB API.
+ */
+export interface PriceHistoryPoint {
+  t: number; // Unix timestamp
+  p: number; // Price (0-1)
+}
+
+/**
+ * Fetch price history for a market outcome via backend proxy.
+ * @param marketId - The Polymarket market ID
+ * @param interval - Time interval: "1m", "1w", "1d", "6h", "1h", or "max"
+ * @param outcomeIndex - Which outcome (0=Yes, 1=No typically)
+ */
+export async function fetchPriceHistory(
+  marketId: string,
+  interval: string = "1m",
+  outcomeIndex: number = 0
+): Promise<PriceHistoryPoint[]> {
+  try {
+    // Use backend proxy which looks up CLOB token ID automatically
+    const response = await fetch(
+      `${API_URL}/api/markets/history/${encodeURIComponent(marketId)}?interval=${interval}&outcome_index=${outcomeIndex}`
+    );
+
+    if (!response.ok) {
+      console.error('Failed to fetch price history:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.history || [];
+  } catch (error) {
+    console.error('Error fetching price history:', error);
+    return [];
+  }
+}

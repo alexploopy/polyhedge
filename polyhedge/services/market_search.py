@@ -274,18 +274,33 @@ class MarketSearch:
             # Use direct field access with fallback - unnecessary defensive loops removed
             liquidity = float(item.get("liquidity") or item.get("liquidityNum") or 0)
             volume = float(item.get("volume") or item.get("volumeNum") or 0)
-            
+            volume_24hr = float(item.get("volume24hr") or 0)
+
             # Get slug for Polymarket URL
             # Prioritize parent event slug if available (for multi-outcome markets)
             slug = item.get("_event_slug") or item.get("slug") or item.get("conditionId") or item.get("id")
+
+            # Parse CLOB token IDs for price history
+            clob_token_ids = []
+            raw_token_ids = item.get("clobTokenIds")
+            if raw_token_ids:
+                if isinstance(raw_token_ids, str):
+                    try:
+                        clob_token_ids = json.loads(raw_token_ids)
+                    except json.JSONDecodeError:
+                        pass
+                elif isinstance(raw_token_ids, list):
+                    clob_token_ids = raw_token_ids
 
             return Market(
                 id=str(item.get("id", "")),
                 question=item.get("question", ""),
                 description=item.get("description", ""),
                 outcomes=outcomes,
+                clob_token_ids=clob_token_ids,
                 liquidity=liquidity,
                 volume=volume,
+                volume_24hr=volume_24hr,
                 end_date=item.get("endDate"),
                 active=True,  # Filtered by API parameters
                 slug=slug,
@@ -348,22 +363,61 @@ class MarketSearch:
             return None
 
     
-    def get_token_history(self, token_id: str, interval: str = "1d") -> list[dict] | None:
-        """Fetch price history for a specific token (outcome)."""
+    def get_token_history(self, market_id: str, interval: str = "1m", outcome_index: int = 0) -> list[dict] | None:
+        """Fetch price history for a market outcome.
+
+        Args:
+            market_id: The Polymarket market ID (will lookup CLOB token ID automatically)
+            interval: Time interval (1h, 6h, 1d, 1w, 1m, max)
+            outcome_index: Which outcome to get history for (0=Yes, 1=No typically)
+        """
         try:
+            # First, get the CLOB token ID from market details
+            market_details = self.get_market_details(market_id)
+            if not market_details:
+                logger.error(f"Could not fetch market details for {market_id}")
+                return None
+
+            clob_token_ids = market_details.get("clobTokenIds", [])
+            if not clob_token_ids:
+                logger.error(f"No CLOB token IDs found for market {market_id}")
+                return None
+
+            # Get the token ID for the requested outcome
+            if outcome_index >= len(clob_token_ids):
+                outcome_index = 0
+            token_id = clob_token_ids[outcome_index]
+            logger.debug(f"Using CLOB token ID: {token_id} for market {market_id}")
+
             # Polymarket CLOB History API
             url = "https://clob.polymarket.com/prices-history"
+
+            # Set appropriate fidelity based on interval
+            # fidelity is in minutes - higher values = fewer data points
+            fidelity_map = {
+                "1h": 1,      # 1 minute intervals for 1 hour
+                "6h": 5,      # 5 minute intervals for 6 hours
+                "1d": 15,     # 15 minute intervals for 1 day
+                "1w": 60,     # 1 hour intervals for 1 week
+                "1m": 60,     # 1 hour intervals for 1 month
+                "max": 1440,  # 1 day intervals for max
+            }
+            fidelity = fidelity_map.get(interval, 60)
+
             params = {
                 "market": token_id,
                 "interval": interval,
-                "fidelity": 60  # Minute-level fidelity if possible, or adjusting based on interval
+                "fidelity": fidelity,
             }
+            logger.debug(f"Fetching price history: {params}")
             response = self.client.get(url, params=params)
             response.raise_for_status()
             data = response.json()
-            return data.get("history", [])
+            history = data.get("history", [])
+            logger.debug(f"Got {len(history)} price history points")
+            return history
         except Exception as e:
-            logger.error(f"Error fetching history for token {token_id}: {e}")
+            logger.error(f"Error fetching history for market {market_id}: {e}")
             return None
 
     def close(self):

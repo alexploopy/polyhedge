@@ -17,8 +17,10 @@ class Market(BaseModel):
     question: str
     description: str = ""
     outcomes: list[Outcome] = Field(default_factory=list)
+    clob_token_ids: list[str] = Field(default_factory=list)  # Token IDs for each outcome
     liquidity: float = Field(default=0, ge=0)
     volume: float = Field(default=0, ge=0)
+    volume_24hr: float = Field(default=0, ge=0)
     end_date: str | None = None
     active: bool = True
     slug: str | None = None  # URL slug for Polymarket link

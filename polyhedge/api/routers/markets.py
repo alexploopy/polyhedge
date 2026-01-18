@@ -103,15 +103,21 @@ async def get_market_details(
         market_search.close()
 
 
-@router.get("/history/{token_id}")
+@router.get("/history/{market_id}")
 async def get_market_history(
-    token_id: str, 
-    interval: str = "1d",
+    market_id: str,
+    interval: str = "1m",
+    outcome_index: int = 0,
     market_search: MarketSearch = Depends(get_market_search)
 ):
-    """Get price history for a specific outcome token."""
+    """Get price history for a market outcome.
+
+    - **market_id**: The Polymarket market ID
+    - **interval**: Time interval (1h, 6h, 1d, 1w, 1m, max). Default: 1m (1 month)
+    - **outcome_index**: Which outcome (0=Yes, 1=No). Default: 0
+    """
     try:
-        history = market_search.get_token_history(token_id, interval)
+        history = market_search.get_token_history(market_id, interval, outcome_index)
         if history is None:
             raise HTTPException(status_code=404, detail="History not found")
         return {"history": history}
