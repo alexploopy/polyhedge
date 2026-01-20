@@ -2,6 +2,8 @@
 
 Insurance for anything
 
+https://devpost.com/software/00000000
+
 ## Installation
 
 ```bash
