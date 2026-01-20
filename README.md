@@ -13,8 +13,7 @@ cd web
 npm install
 cd ..
 
-# Set your API key
-export ANTHROPIC_API_KEY=sk-ant-...
+# Set your API keys, see .env.example
 ```
 
 ## Running the Backend
