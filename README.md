@@ -1,6 +1,6 @@
 # PolyHedge
 
-IRL Insurance via Polymarket - hedge real-life risks with prediction markets.
+Insurance for anything
 
 ## Installation
 
